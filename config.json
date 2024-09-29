@@ -2,6 +2,7 @@
     "prefix": "#",
     "owner": "Ren",
     "botname": "RTUMM AI",
+    "nickNameBot": "RTUMM AI [ # ]",
     "apiOptions": {
         "forceLogin": false,
         "logLevel": "silent",
