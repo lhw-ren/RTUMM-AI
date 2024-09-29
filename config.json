@@ -1,7 +1,7 @@
 {
     "prefix": "#",
     "owner": "Ren",
-    "botname": "RTUMM AI [ # ]",
+    "botname": "RTUMM AI",
     "apiOptions": {
         "forceLogin": false,
         "logLevel": "silent",
