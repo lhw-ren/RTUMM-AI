@@ -10,7 +10,7 @@ module.exports = {
 
                 for (const participant of addedParticipants) {
                     const userName = participant.fullName || 'New User';
-                    const greetingMessage = convertToGothic(`Welcome to the group, ${userName}! We're happy to have you here. 😊`);
+                    const greetingMessage = convertToGothic('Annyeonggg {userName}! welcome to the group.🤗\nhope you will enjoy your time here in {boxName} 😍🎀.`);
 
                     await api.sendMessage(greetingMessage, event.threadID);
                 }
