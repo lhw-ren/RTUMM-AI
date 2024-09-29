@@ -7,7 +7,7 @@ const youtube = google.youtube({
 module.exports = {
   name: "video",
   description: "Search and fetch a YouTube video based on input.",
-  prefixRequired: true,  // Indicates that the command needs a prefix (e.g., #video)
+  prefixRequired: false,
   adminOnly: false,      // This can be changed to true if only admins should use this command
   async execute(api, event, args) {
     try {
