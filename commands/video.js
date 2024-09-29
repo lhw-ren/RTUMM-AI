@@ -1,7 +1,7 @@
 const axios = require("axios");
 const fs = require('fs-extra');
 const path = require('path');
-const { getStreamFromURL, shortenURL, randomString } = global.utils;
+const { shortenURL, randomString } = global.utils;  // Retain only the necessary utilities
 
 module.exports = {
     name: "video",
@@ -9,18 +9,17 @@ module.exports = {
     prefixRequired: true, // Command requires a prefix
     adminOnly: false, // Not restricted to admins
     async execute(api, event, args) {
-        console.log("Executing video command..."); // Debugging line
+        console.log("Executing video command...");
 
-        // Start of your logic
         api.setMessageReaction("⏳", event.messageID, (err) => {}, true);
-        
+
         try {
             let title = '';
             let shortUrl = '';
 
             // Handle replies with attachments (audio/video)
             const extractShortUrl = async () => {
-                console.log("Extracting attachment URL..."); // Debugging line
+                console.log("Extracting attachment URL...");
                 const attachment = event.messageReply.attachments[0];
                 if (attachment.type === "video" || attachment.type === "audio") {
                     return attachment.url;
@@ -31,10 +30,10 @@ module.exports = {
 
             let videoId = '';
             if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
-                console.log("Reply has attachments..."); // Debugging line
+                console.log("Reply has attachments...");
                 shortUrl = await extractShortUrl();
                 
-                console.log(`Attachment URL: ${shortUrl}`); // Debugging line
+                console.log(`Attachment URL: ${shortUrl}`);
                 const musicRecognitionResponse = await axios.get(`https://youtube-music-sooty.vercel.app/kshitiz?url=${encodeURIComponent(shortUrl)}`);
                 
                 title = musicRecognitionResponse.data.title;
@@ -46,10 +45,10 @@ module.exports = {
                 
                 shortUrl = await shortenURL(shortUrl);
             } else if (args.length === 0) {
-                message.reply("Please provide a video name or reply to a video or audio attachment.");
+                api.sendMessage("Please provide a video name or reply to a video or audio attachment.", event.threadID);
                 return;
             } else {
-                console.log("Searching by title..."); // Debugging line
+                console.log("Searching by title...");
                 title = args.join(" ");
                 const searchResponse = await axios.get(`https://youtube-kshitiz.vercel.app/youtube?search=${encodeURIComponent(title)}`);
                 
@@ -65,20 +64,20 @@ module.exports = {
             }
 
             if (!videoId) {
-                message.reply("No video found for the given query.");
+                api.sendMessage("No video found for the given query.", event.threadID);
                 return;
             }
 
-            console.log(`Video ID found: ${videoId}`); // Debugging line
+            console.log(`Video ID found: ${videoId}`);
             const downloadResponse = await axios.get(`https://youtube-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}`);
             
             if (downloadResponse.data.length === 0) {
-                message.reply("Failed to retrieve download link for the video.");
+                api.sendMessage("Failed to retrieve download link for the video.", event.threadID);
                 return;
             }
 
             const videoUrl = downloadResponse.data[0];
-            console.log(`Downloading video from: ${videoUrl}`); // Debugging line
+            console.log(`Downloading video from: ${videoUrl}`);
             const writer = fs.createWriteStream(path.join(__dirname, "cache", `${videoId}.mp4`));
             const response = await axios({
                 url: videoUrl,
@@ -90,17 +89,17 @@ module.exports = {
 
             writer.on('finish', () => {
                 const videoStream = fs.createReadStream(path.join(__dirname, "cache", `${videoId}.mp4`)); 
-                message.reply({ body: `📹 Playing: ${title}\nDownload Link: ${shortUrl}`, attachment: videoStream });
+                api.sendMessage({ body: `📹 Playing: ${title}\nDownload Link: ${shortUrl}`, attachment: videoStream }, event.threadID);
                 api.setMessageReaction("✅", event.messageID, () => {}, true);
             });
 
             writer.on('error', (error) => {
                 console.error("Error during download:", error);
-                message.reply("An error occurred while fetching the video.");
+                api.sendMessage("An error occurred while fetching the video.", event.threadID);
             });
         } catch (error) {
             console.error("Error:", error);
-            message.reply("An error occurred while fetching the video.");
+            api.sendMessage("An error occurred while fetching the video.", event.threadID);
         }
     },
 };
