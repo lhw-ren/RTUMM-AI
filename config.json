@@ -1,7 +1,7 @@
 {
-    "prefix": "/",
-    "owner": "Owner Name",
-    "botname": "Bot Name",
+    "prefix": "#",
+    "owner": "Ren",
+    "botname": "RTUMM AI [ # ]",
     "apiOptions": {
         "forceLogin": false,
         "logLevel": "silent",
@@ -15,7 +15,7 @@
         "listenEvents": true
     },
     "adminBot": [
-        "Owner UID"
+        "100067405101733"
     ],
     "autoLoad": true,
     "autopost": true,
