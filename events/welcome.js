@@ -54,7 +54,7 @@ module.exports = {
                 }
 
                 if (userName.length == 0) return;
-                let { welcomeMessage = `Annyeonggg {userName}! welcome to the group.🤗\nhope you will enjoy your time here in {boxName} 😍🎀.` } = threadData.data;
+                let { welcomeMessage = `Annyeonggg {userName}! welcome to the group.🤗 hope you will enjoy your time here in {boxName} 😍🎀.` } = threadData.data;
                 
                 const form = {
                     mentions: welcomeMessage.match(/\{userNameTag\}/g) ? mentions : null
