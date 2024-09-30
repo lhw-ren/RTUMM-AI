@@ -12,7 +12,7 @@ module.exports = {
         }
 
         const query = args.join(" ");
-        const apiKey = "AIzaSyAF7x3awPHxpPWkWOVNuL-7u1koRpJXOX8"; // Replace with your API key
+        const apiKey = "AIzaSyC7XFwtcvsPTihZzD-boN1sv5lurdTYb7o"; // Replace with your API key
         const cx = "30e0a0a9d4a554f25"; // Replace with your search engine ID
 
         try {
