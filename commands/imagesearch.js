@@ -12,17 +12,22 @@ module.exports = {
         }
 
         const query = args.join(" ");
-        const apiKey = "AIzaSyB1UaUgsALZtuwmnuDtRyDuiHs7SmAYcIU"; // Replace with your API key
-        const cx = "30e0a0a9d4a554f25"; // Replace with your search engine ID
+        const apiKey = "AIzaSyB1UaUgsALZtuwmnuDtRyDuiHs7SmAYcIU"; // Your API key
+        const cx = "d47f1bce51ca24ca5"; // Your Custom Search Engine ID (string, not HTML)
 
         try {
             const response = await axios.get(`https://www.googleapis.com/customsearch/v1?q=${query}&cx=${cx}&key=${apiKey}&searchType=image`);
-            const imageUrl = response.data.items[0].link;
-
-            // Send the image URL to the chat
-            api.sendMessage({ body: "Here's an image I found:", attachment: imageUrl }, event.threadID);
+            
+            // Check if there are any images returned
+            if (response.data.items && response.data.items.length > 0) {
+                const imageUrl = response.data.items[0].link;
+                // Send the image URL to the chat
+                api.sendMessage({ body: "Here's an image I found:", attachment: imageUrl }, event.threadID);
+            } else {
+                api.sendMessage("Sorry, no images found for that search term.", event.threadID);
+            }
         } catch (error) {
-            console.error(error);
+            console.error("Error fetching image:", error.response?.data || error.message);
             api.sendMessage("Sorry, I couldn't find an image.", event.threadID);
         }
     },
