@@ -6,7 +6,7 @@ const math = require('mathjs');  // For evaluating math expressions
 module.exports = {
   name: "graph",
   description: "Plot a graph for a given equation.",
-  prefixRequired: true,
+  prefixRequired: false,
   adminOnly: false,
   async execute(api, event, args) {
     try {
