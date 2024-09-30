@@ -1,46 +1,49 @@
 const { createCanvas } = require('canvas');
-const Chart = require('chart.js');
+const ChartJS = require('chart.js');
 const fs = require('fs');
-const path = require('path');
-const math = require('mathjs');
+const math = require('mathjs');  // For evaluating math expressions
 
 module.exports = {
   name: "graph",
-  description: "Plot a graph from a math equation.",
-  prefixRequired: false,
+  description: "Plot a graph for a given equation.",
+  prefixRequired: true,
   adminOnly: false,
   async execute(api, event, args) {
-    if (!args.length) {
-      return api.sendMessage("Please provide a math equation to graph.", event.threadID);
-    }
-
-    const equation = args.join(" ");
-    const width = 800;  // Graph width
-    const height = 600;  // Graph height
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-
     try {
-      // Evaluate the equation over a range of x-values
-      const xValues = Array.from({ length: 101 }, (_, i) => i - 50);  // x values from -50 to 50
-      const yValues = xValues.map(x => {
-        try {
-          return math.evaluate(equation, { x });
-        } catch (err) {
-          return NaN;
-        }
-      });
+      // Get the equation from user input
+      const equation = args.join(" ");
+      if (!equation) {
+        return api.sendMessage("Please provide an equation to plot.", event.threadID);
+      }
 
-      // Set up the chart
-      new Chart(ctx, {
+      // Define X-axis values (you can change this based on the desired range)
+      let xValues = Array.from({ length: 100 }, (_, i) => i - 50); // X from -50 to 49
+
+      // Calculate Y-values for each X based on the equation
+      let yValues;
+      try {
+        yValues = xValues.map(x => math.evaluate(equation, { x }));
+      } catch (err) {
+        return api.sendMessage("Invalid equation. Please check your input.", event.threadID);
+      }
+
+      // Create canvas for the chart
+      const width = 800;  // Width of the image
+      const height = 600; // Height of the image
+      const canvas = createCanvas(width, height);
+      const ctx = canvas.getContext('2d');
+
+      // Plot the graph using chart.js
+      const myChart = new ChartJS(ctx, {
         type: 'line',
         data: {
-          labels: xValues,
+          labels: xValues,  // X-axis points
           datasets: [{
-            label: `Graph of ${equation}`,
-            data: yValues,
+            label: `Graph of: ${equation}`,
+            data: yValues,  // Y-axis points calculated from equation
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
-            fill: false
+            borderWidth: 1
           }]
         },
         options: {
@@ -48,38 +51,28 @@ module.exports = {
             x: {
               type: 'linear',
               position: 'bottom',
-              title: {
-                display: true,
-                text: 'x'
-              }
             },
             y: {
-              title: {
-                display: true,
-                text: 'y'
-              }
+              beginAtZero: false
             }
           }
         }
       });
 
-      // Save the graph to a file
-      const graphPath = path.join(__dirname, "cache", `${Date.now()}_graph.png`);
-      const out = fs.createWriteStream(graphPath);
-      const stream = canvas.createPNGStream();
-      stream.pipe(out);
-      out.on('finish', () => {
-        api.sendMessage({
-          body: `Here's the graph of \`${equation}\`:`,
-          attachment: fs.createReadStream(graphPath)
-        }, event.threadID, () => {
-          fs.unlinkSync(graphPath);  // Clean up the file after sending
-        });
+      // Save the canvas to a file
+      const buffer = canvas.toBuffer('image/png');
+      const imagePath = 'graph.png';  // Define temporary file path
+      fs.writeFileSync(imagePath, buffer);
+
+      // Send the image to the user
+      api.sendMessage({ attachment: fs.createReadStream(imagePath) }, event.threadID, () => {
+        // Delete the file after sending it
+        fs.unlinkSync(imagePath);
       });
 
     } catch (err) {
       console.error(err);
-      return api.sendMessage("An error occurred while plotting the graph.", event.threadID);
+      api.sendMessage("An error occurred while plotting the graph.", event.threadID);
     }
   }
 };
