@@ -1,61 +1,31 @@
 module.exports = {
-    config: {
-        name: "welcome",
-        version: "1.0",
-        author: "Math Major",
-        category: "events"
-    },
+    name: 'welcome',
+    description: 'Handles the event when a new member joins the group and changes the bot nickname if it is added.',
 
-    langs: {
-        en: {
-            welcomeMessage: "Hello, everyone! I'm RTUMM, an AI Messenger ChatBot created by Math Major. I'm excited to be part of your group and ready to assist with anything math-related or beyond! Just type my prefix (#) to ask me anything. 🤗🎀",
-            defaultWelcomeMessage: `Annyeonggg {userName}! Welcome to the group.🤗 Hope you will enjoy your time here in {boxName} 😍🎀.`
-        }
-    },
+    async handle(api, event) {
+        // Check if the event is a "log:subscribe" (new members joining)
+        if (event.logMessageType === "log:subscribe") {
+            const { threadID } = event;
+            const prefix = global.prefix;  // Assuming global.prefix is defined in your config
+            const dataAddedParticipants = event.logMessageData.addedParticipants;
 
-    onStart: async ({ threadsData, message, event, api, getLang }) => {
-        if (event.logMessageType == "log:subscribe") {
-            return async function () {
-                const { threadID } = event;
-                const { nickNameBot } = global.GoatBot.config;
-                const prefix = global.utils.getPrefix(threadID);
-                const dataAddedParticipants = event.logMessageData.addedParticipants;
+            // Auto-change the bot's nickname if the bot is added to the group
+            const botID = api.getCurrentUserID();
+            if (dataAddedParticipants.some(participant => participant.userFbId === botID)) {
+                const botNickname = "RTUMM"; // Set the bot's nickname here
+                await api.changeNickname(botNickname, threadID, botID);
+                return api.sendMessage(`Hello, everyone! I'm ${botNickname}, an AI Messenger ChatBot created by Math Major. I'm excited to be part of your group and ready to assist with anything math-related or beyond! Just type my prefix (${prefix}) to ask me anything. 🤗🎀`, threadID);
+            }
 
-                // If new member is the bot
-                if (dataAddedParticipants.some((item) => item.userFbId == api.getCurrentUserID())) {
-                    if (nickNameBot)
-                        api.changeNickname(nickNameBot, threadID, api.getCurrentUserID());
-                    return message.send(getLang("welcomeMessage", prefix));
-                }
-
-                // Handle new members
-                const threadData = await threadsData.get(threadID);
-                const threadName = threadData.threadName;
-                const userName = [];
-                const mentions = [];
-
-                for (const user of dataAddedParticipants) {
-                    userName.push(user.fullName);
-                    mentions.push({
-                        tag: user.fullName,
-                        id: user.userFbId
-                    });
-                }
-
-                // {userName}: name of the new member
-                // {boxName}: name of the group
-                let welcomeMessage = getLang("defaultWelcomeMessage");
-                welcomeMessage = welcomeMessage
-                    .replace("{userName}", userName.join(", "))
-                    .replace("{boxName}", threadName);
-
-                const form = {
-                    body: welcomeMessage,
-                    mentions: mentions
-                };
-
-                message.send(form);
-            };
+            // Handle welcome message for other new members
+            const newMembers = dataAddedParticipants.filter(participant => participant.userFbId !== botID);
+            if (newMembers.length > 0) {
+                const memberNames = newMembers.map(member => member.fullName).join(", ");
+                const groupName = (await api.getThreadInfo(threadID)).threadName;
+                const welcomeMessage = `Annyeonggg ${memberNames}! Welcome to the group.🤗 Hope you will enjoy your time here in ${groupName} 😍🎀.`;
+                
+                return api.sendMessage(welcomeMessage, threadID);
+            }
         }
     }
 };
