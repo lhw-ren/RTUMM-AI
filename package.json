@@ -20,6 +20,7 @@
     "gradient-string": "^2.0.2",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^4.0.0",
+    "mathjs": "^11.5.0",
     "mqtt": "^3.0.0",
     "node-cron": "^3.0.3",
     "npmlog": "^1.2.0",
