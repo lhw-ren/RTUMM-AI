@@ -13,6 +13,8 @@
     "@types/node": "^18.0.6",
     "axios": "^1.7.7",
     "bluebird": "^2.11.0",
+    "canvas": "^2.8.0",
+    "chart.js": "^4.0.0",
     "chatbox-dev-ai": "^1.0.4",
     "cheerio": "^0.22.0",
     "express": "^4.21.0",
