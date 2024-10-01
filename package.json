@@ -42,6 +42,7 @@
     "tough-cookie-file-store": "^2.0.3",
     "wikijs": "^6.4.0",
     "websocket-stream": "^5.5.0",
+    "ytdl-core": "^4.11.2",
     "googleapis": "^100.0.0"
   }
 }
