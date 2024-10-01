@@ -1,39 +1,77 @@
-const { google } = require('googleapis');
-const youtube = google.youtube({
-  version: 'v3',
-  auth: 'AIzaSyC_ZRHbmvHXtPeuys136AjTUhpPS465icg' // Replace this with your actual YouTube API key
-});
+const ytdl = require("ytdl-core");
+const fs = require("fs");
+const path = require("path");
+
+const _48MB = 48 * 1024 * 1024;  // 48MB size limit
 
 module.exports = {
-  name: "video",
-  description: "Search and fetch a YouTube video based on input.",
-  prefixRequired: true,  // Indicates that the command needs a prefix (e.g., #video)
-  adminOnly: false,      // This can be changed to true if only admins should use this command
-  async execute(api, event, args) {
-    try {
-      const searchQuery = args.join(" ");
-      if (!searchQuery) {
-        return api.sendMessage("Please provide a search query for YouTube.", event.threadID);
-      }
+    name: "video",
+    description: "Play a video from YouTube.",
+    prefixRequired: true, // Command requires a prefix
+    adminOnly: false, // Command is not restricted to admins only
+    async execute(api, event, args) {
+        const getLang = (key) => langData["en_US"][key];  // Simplified language function
+        if (!args[0]) {
+            return api.sendMessage(getLang("video.missingArguement"), event.threadID);
+        }
 
-      const res = await youtube.search.list({
-        part: 'snippet',
-        q: searchQuery,
-        maxResults: 1,
-        type: 'video'
-      });
+        let url = args[0];
+        if (!ytdl.validateURL(url)) {
+            return api.sendMessage(getLang("video.invalidUrl"), event.threadID);
+        }
 
-      const video = res.data.items[0];
-      if (video) {
-        const videoUrl = `https://www.youtube.com/watch?v=${video.id.videoId}`;
-        const videoTitle = video.snippet.title;
-        await api.sendMessage(`Here's a YouTube video: ${videoTitle} \n${videoUrl}`, event.threadID);
-      } else {
-        await api.sendMessage("No videos found.", event.threadID);
-      }
-    } catch (err) {
-      console.error(err);
-      await api.sendMessage("An error occurred while fetching the video.", event.threadID);
+        const videoInfo = await ytdl.getInfo(url);
+        const video = {
+            title: videoInfo.videoDetails.title,
+            id: videoInfo.videoDetails.videoId
+        };
+
+        await playVideo(api, event, video, getLang);
     }
-  },
 };
+
+const langData = {
+    "en_US": {
+        "video.missingArguement": "Please provide a keyword or URL.",
+        "video.noResult": "No result found.",
+        "video.invalidUrl": "Invalid URL.",
+        "video.invalidIndex": "Invalid index.",
+        "video.tooLarge": "Video is too large, max size is 48MB.",
+        "video.error": "An error occurred."
+    }
+};
+
+async function playVideo(api, event, video, getLang) {
+    const { title, id } = video;
+    api.sendMessage("⏳ Processing your video...", event.threadID);
+    
+    const cachePath = path.join(__dirname, `_ytvideo${Date.now()}.mp4`);
+    try {
+        let stream = ytdl(id, { quality: 'highest' });
+        const writeStream = fs.createWriteStream(cachePath);
+        stream.pipe(writeStream);
+
+        await new Promise((resolve, reject) => {
+            stream.on("end", resolve);
+            stream.on("error", reject);
+        });
+
+        const fileStat = fs.statSync(cachePath);
+        if (fileStat.size > _48MB) {
+            api.sendMessage(getLang("video.tooLarge"), event.threadID);
+        } else {
+            api.sendMessage({
+                body: `[ ${title} ]`,
+                attachment: fs.createReadStream(cachePath)
+            }, event.threadID);
+        }
+
+    } catch (err) {
+        console.error(err);
+        api.sendMessage(getLang("video.error"), event.threadID);
+    } finally {
+        if (fs.existsSync(cachePath)) {
+            fs.unlinkSync(cachePath); // Clean up the temporary file
+        }
+    }
+}
