@@ -1,55 +1,33 @@
+require('dotenv').config();
 const { Configuration, OpenAIApi } = require('openai');
 
-// Initialize OpenAI API with your API key
 const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY, // Make sure you set the API key in your environment variables
+  apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
-// This object will store conversation history per user
-const conversationHistory = {};
-
 module.exports = {
-    name: "gptchat",
-    description: "Chat with GPT-4 continuously, remembers your previous messages.",
-    prefixRequired: false, // You can use a prefix or not depending on your structure
-    adminOnly: false,
-    async execute(api, event, args) {
-        try {
-            const userId = event.senderID; // Use the senderID to track each user's conversation separately
-            const userMessage = args.join(" "); // User's message as input
+  name: "gptchat",
+  description: "Chat continuously with AI using GPT-4.",
+  prefixRequired: false,
+  adminOnly: false,
+  async execute(api, event, args) {
+    try {
+      const userInput = args.join(" ");
+      if (!userInput) {
+        return api.sendMessage("Please provide input for the AI.", event.threadID);
+      }
 
-            // Initialize conversation history if it doesn't exist for the user
-            if (!conversationHistory[userId]) {
-                conversationHistory[userId] = [];
-            }
+      const response = await openai.createChatCompletion({
+        model: "gpt-4",
+        messages: [{ role: "user", content: userInput }],
+      });
 
-            // Add user's message to the conversation history
-            conversationHistory[userId].push({
-                role: "user",
-                content: userMessage
-            });
-
-            // Make a request to OpenAI with the conversation history
-            const response = await openai.createChatCompletion({
-                model: "gpt-4", // Or "gpt-3.5-turbo" if you want to use a cheaper option
-                messages: conversationHistory[userId]
-            });
-
-            const botMessage = response.data.choices[0].message.content;
-
-            // Add bot's reply to the conversation history
-            conversationHistory[userId].push({
-                role: "assistant",
-                content: botMessage
-            });
-
-            // Send the reply back to the user
-            api.sendMessage(botMessage, event.threadID, event.messageID);
-
-        } catch (err) {
-            console.error(err);
-            api.sendMessage("Something went wrong while talking to GPT.", event.threadID);
-        }
-    },
+      const aiResponse = response.data.choices[0].message.content;
+      await api.sendMessage(aiResponse, event.threadID);
+    } catch (err) {
+      console.error(err);
+      await api.sendMessage("An error occurred while communicating with the AI.", event.threadID);
+    }
+  },
 };
