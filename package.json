@@ -18,6 +18,7 @@
     "chart.js": "^4.0.0",
     "chatbox-dev-ai": "^1.0.4",
     "cheerio": "^0.22.0",
+    "dotenv": "16.4.5",
     "express": "^4.21.0",
     "express-rate-limit": "^6.7.0",
     "ffmpeg-static": "^5.1.0",
